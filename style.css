@@ -1,0 +1,252 @@
+:root {
+  color-scheme: light;
+  --text: #1f1f24;
+  --muted: #5c5c66;
+  --line: #e2e2e8;
+  --accent: #6d3f9c;
+  --tint: #f6f2fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0 auto;
+  padding: 48px 24px 32px;
+  max-width: 920px;
+  background: #fff;
+  color: var(--text);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: var(--accent);
+}
+
+h1 {
+  margin: 0 0 20px;
+  font-size: 2rem;
+  line-height: 1.25;
+  text-align: center;
+  text-wrap: balance;
+}
+
+h2 {
+  margin: 48px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  font-size: 1.4rem;
+}
+
+h3 {
+  margin: 32px 0 8px;
+  font-size: 1.1rem;
+}
+
+/* Title block */
+.venue {
+  width: fit-content;
+  margin: 0 auto 18px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: var(--tint);
+  color: var(--accent);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.authors,
+.affiliations {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: center;
+}
+
+.authors li {
+  display: inline-block;
+  margin: 0 10px;
+  font-size: 1.1rem;
+}
+
+.affiliations {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  counter-reset: affiliation;
+}
+
+.affiliations li {
+  counter-increment: affiliation;
+}
+
+.affiliations li::before {
+  content: counter(affiliation);
+  margin-right: 4px;
+  font-size: 0.7em;
+  vertical-align: super;
+  line-height: 0;
+}
+
+.contrib {
+  margin: 10px 0 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.links a,
+.links .pending {
+  padding: 7px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.links a:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.links .pending {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+/* Figures */
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+figure {
+  margin: 40px 0 0;
+}
+
+figcaption,
+.caption {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.figure-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Equations */
+.equation {
+  overflow-x: auto;
+}
+
+/* Tables */
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+th,
+td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+
+thead th {
+  border-bottom: 2px solid var(--text);
+}
+
+tbody th {
+  font-weight: 400;
+  text-align: left;
+}
+
+tr.group th {
+  padding-top: 12px;
+  font-weight: 600;
+}
+
+tr.ours {
+  background: var(--tint);
+}
+
+/* Citation */
+.bibtex {
+  position: relative;
+}
+
+.bibtex pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fafafa;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+#copy-bibtex {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+footer {
+  margin-top: 56px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 32px 16px 24px;
+    font-size: 16px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .figure-pair {
+    grid-template-columns: 1fr;
+  }
+}
