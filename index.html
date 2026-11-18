@@ -40,6 +40,9 @@
     <nav class="links" aria-label="Paper links">
       <a href="https://arxiv.org/abs/2606.02339">arXiv</a>
       <a href="https://arxiv.org/pdf/2606.02339">PDF</a>
+      <a href="https://neurips.cc/virtual/2026/loc/paris/poster/149828">NeurIPS page</a>
+      <a href="https://neurips.cc/media/neurips-2026/Slides/149828_2nJnd7K.pdf">Slides</a>
+      <a class="primary" href="demo.html">Interactive demo</a>
       <span class="pending">Code (coming soon)</span>
       <a href="#citation">BibTeX</a>
     </nav>
@@ -63,6 +66,43 @@
       <div class="equation">$$\hat{P}_{t}^{(k)} = \alpha\,\hat{P}_{t-1}^{(k)} + (1-\alpha)\,\frac{B^{(k)}_{t}}{B}$$</div>
       <p>Here \(B^{(k)}_{t}\) is the number of samples in the batch predicted as class \(k\). The DSBR loss over batch \(\mathcal{B}_{t}\) then weights each sample’s entropy loss \(l(X)\) by the inverse of its predicted class frequency:</p>
       <div class="equation">$$\hat{\mathcal{L}}^{*}_{t} = \frac{1}{B}\sum_{X\in\mathcal{B}_{t}}\frac{l(X)}{K\cdot\hat{P}_{t}^{(\hat{y}(X))}}$$</div>
+    </section>
+
+    <section id="code">
+      <h2>Add it to your loss</h2>
+      <p>DSBR is a small change to entropy minimization (EM; <a href="https://arxiv.org/abs/2006.10726">Wang et al., ICLR 2021</a>). It needs no extra forward pass, sample filter or augmentation, because it only changes how per-sample entropies are averaged. Lines marked − are EM’s and lines marked + are DSBR’s.</p>
+      <div class="diff-meta">
+        <span class="count"><b>8</b> lines added, <b>2</b> changed</span>
+        <button type="button" class="copy" id="copy-code">Copy DSBR code</button>
+      </div>
+      <div class="diff" role="region" aria-label="Changes from EM to DSBR">
+        <span class="dl del"><span class="mk" aria-hidden="true">−</span>class EM:</span><span class="dl add"><span class="mk" aria-hidden="true">+</span>class DSBR(EM):</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>    def __init__(self, input_shape, num_classes, num_domains, hparams, algorithm):</span><span class="dl del"><span class="mk" aria-hidden="true">−</span>        ...  # EM setup</span><span class="dl add"><span class="mk" aria-hidden="true">+</span>        super().__init__(input_shape, num_classes, num_domains, hparams, algorithm)</span><span class="dl add"><span class="mk" aria-hidden="true">+</span>        self.cluster_distribution = torch.ones(num_classes) / num_classes</span><span class="dl add"><span class="mk" aria-hidden="true">+</span>        self.ema_alpha = hparams.get(&#x27;ema_alpha&#x27;, 0.9)</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span></span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>    def forward_and_adapt(self, x, model, optimizer):</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>        optimizer.zero_grad()</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>        outputs = model(x)</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>        entropies = self.entropy_fn(outputs)</span><span class="dl add"><span class="mk" aria-hidden="true">+</span>        cluster_ids = outputs.argmax(dim=1)</span><span class="dl add"><span class="mk" aria-hidden="true">+</span>        local = torch.bincount(cluster_ids, minlength=self.num_classes) / len(cluster_ids)</span><span class="dl add"><span class="mk" aria-hidden="true">+</span>        self.cluster_distribution = (self.ema_alpha * self.cluster_distribution.to(entropies.device)
+                                     + (1 - self.ema_alpha) * local)</span><span class="dl add"><span class="mk" aria-hidden="true">+</span>        entropies = entropies / (self.num_classes * self.cluster_distribution[cluster_ids])</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>        loss = entropies.mean(0)</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>        loss.backward()</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>        optimizer.step()</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>        return outputs</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span></span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>    def reset(self):</span><span class="dl ctx"><span class="mk" aria-hidden="true"> </span>        load_model_and_optimizer(self.model, self.optimizer, self.model_state, self.optimizer_state)</span><span class="dl add"><span class="mk" aria-hidden="true">+</span>        self.cluster_distribution = torch.ones_like(self.cluster_distribution) / len(self.cluster_distribution)</span>
+      </div>
+      <pre id="dsbr-code" hidden>class DSBR(EM):
+    def __init__(self, input_shape, num_classes, num_domains, hparams, algorithm):
+        super().__init__(input_shape, num_classes, num_domains, hparams, algorithm)
+        self.cluster_distribution = torch.ones(num_classes) / num_classes
+        self.ema_alpha = hparams.get(&#x27;ema_alpha&#x27;, 0.9)
+
+    def forward_and_adapt(self, x, model, optimizer):
+        optimizer.zero_grad()
+        outputs = model(x)
+        entropies = self.entropy_fn(outputs)
+        cluster_ids = outputs.argmax(dim=1)
+        local = torch.bincount(cluster_ids, minlength=self.num_classes) / len(cluster_ids)
+        self.cluster_distribution = (self.ema_alpha * self.cluster_distribution.to(entropies.device)
+                                     + (1 - self.ema_alpha) * local)
+        entropies = entropies / (self.num_classes * self.cluster_distribution[cluster_ids])
+        loss = entropies.mean(0)
+        loss.backward()
+        optimizer.step()
+        return outputs
+
+    def reset(self):
+        load_model_and_optimizer(self.model, self.optimizer, self.model_state, self.optimizer_state)
+        self.cluster_distribution = torch.ones_like(self.cluster_distribution) / len(self.cluster_distribution)</pre>
+      <p class="caption">Condensed from the paper’s code. DSBR uses Adam by default.</p>
     </section>
 
     <section id="results">
