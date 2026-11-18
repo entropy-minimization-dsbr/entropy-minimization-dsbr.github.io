@@ -256,25 +256,101 @@ footer {
   }
 }
 
-/* Code diff */
-.diff-meta {
+/* Code viewer */
+.codebox {
+  overflow: hidden;
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.codebox-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 8px 16px;
-  margin: 14px 0 10px;
-  font-size: 0.9rem;
+  padding: 0 10px 0 4px;
+  border-bottom: 1px solid var(--line);
+  background: #f7f7f9;
 }
 
-.count b {
+.codebox-tabs {
+  display: flex;
+  overflow-x: auto;
+}
+
+.codebox-tabs [role="tab"] {
+  position: relative;
+  min-height: 46px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.93rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.codebox-tabs [role="tab"] span {
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #ececf1;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.codebox-tabs [role="tab"]:hover {
+  color: var(--text);
+}
+
+.codebox-tabs [role="tab"][aria-selected="true"] {
+  background: #fff;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.codebox-tabs [role="tab"][aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 10px 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.codebox-tabs [role="tab"][aria-selected="true"] span {
+  background: var(--tint);
+}
+
+.codebox-meta {
+  flex: 1 1 auto;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.codebox-meta .plus {
   color: var(--accent);
 }
 
-.copy {
-  padding: 4px 12px;
+.codebox-meta .minus {
+  margin-left: 8px;
+  color: #9a4a00;
+}
+
+.codebox-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  margin: 6px 0;
+  padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 6px;
   background: #fff;
   color: var(--text);
   font: inherit;
@@ -282,42 +358,43 @@ footer {
   cursor: pointer;
 }
 
-.copy:hover {
+.codebox-copy:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
 
 .diff {
   overflow-x: auto;
-  padding-block: 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  padding-block: 10px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.74rem;
-  line-height: 1.6;
-}
-
-.diff-head {
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--line);
-  background: #fafafa;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  line-height: 1.65;
+  counter-reset: line;
 }
 
 .dl {
   display: block;
-  min-height: 1.6em;
-  padding: 0 14px 0 12px;
-  white-space: pre;
   width: max-content;
   min-width: 100%;
+  min-height: 1.65em;
+  padding: 0 16px 0 0;
+  white-space: pre;
+  counter-increment: line;
+}
+
+.dl::before {
+  content: counter(line);
+  display: inline-block;
+  width: 3.2em;
+  padding-right: 12px;
+  color: #a3a3ad;
+  text-align: right;
+  user-select: none;
 }
 
 .dl .mk {
   display: inline-block;
-  width: 1.4ch;
+  width: 1.6ch;
   font-weight: 700;
   user-select: none;
 }
@@ -338,12 +415,52 @@ footer {
   color: #9a4a00;
 }
 
-.dl.gap {
-  background: #fafafa;
+.diff[data-view="before"] .add,
+.diff[data-view="after"] .del {
+  display: none;
 }
 
-.caption {
-  color: var(--muted);
-  font-size: 0.9rem;
+.diff[data-view="before"] .dl.del {
+  background: none;
 }
 
+.diff[data-view="before"] .mk,
+.diff[data-view="after"] .mk {
+  visibility: hidden;
+}
+
+@media (max-width: 640px) {
+  .codebox-tabs [role="tab"] {
+    padding: 0 9px;
+    font-size: 0.86rem;
+  }
+
+  .codebox-tabs [role="tab"] span {
+    padding: 1px 4px;
+    font-size: 0.72rem;
+  }
+
+  .codebox-bar {
+    gap: 0 8px;
+  }
+
+  .codebox-copy {
+    order: 2;
+    margin-left: auto;
+    padding: 0 9px;
+  }
+
+  .codebox-copy span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .codebox-meta {
+    order: 3;
+    flex-basis: 100%;
+    padding: 0 0 8px 12px;
+  }
+}

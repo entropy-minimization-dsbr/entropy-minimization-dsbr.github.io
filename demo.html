@@ -5,21 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="only light">
   <title>Interactive Demo | DSBR</title>
-  <meta name="description" content="Interactive demo for the NeurIPS 2026 Spotlight paper on DSBR: watch how Entropy Minimization and DSBR weight each predicted class, and see Entropy Minimization collapse while DSBR does not.">
-  <link rel="stylesheet" href="demo/demo.css">
-  <script defer src="demo/engine.js"></script>
-  <script defer src="demo/models.js"></script>
-  <script defer src="demo/demo.js"></script>
+  <meta name="description" content="Interactive demo for the NeurIPS 2026 Spotlight paper “Entropy Minimization without Model Collapse”: see how Entropy Minimization and DSBR weight every sample, and watch the model collapse under Entropy Minimization but not under DSBR.">
+  <link rel="stylesheet" href="demo/demo.css?v=4">
+  <script defer src="demo/engine.js?v=4"></script>
+  <script defer src="demo/models.js?v=4"></script>
+  <script defer src="demo/demo.js?v=4"></script>
 </head>
 <body>
-  <header class="wrap top">
+  <header class="wrap masthead">
     <a class="back" href="index.html">← Project page</a>
-    <p class="venue"><strong>NeurIPS 2026 Spotlight Paper</strong> <span aria-hidden="true">·</span> Interactive demo</p>
-    <h1>Where the update’s weight goes</h1>
-    <p class="lede">Each band is one predicted class, and its height is that class’s share of the total weight in each batch. Entropy Minimization gives every sample the same weight, so the most-predicted class takes over the update until the model collapses. DSBR divides each sample’s weight by how often its class is predicted, so every class keeps a say.</p>
+    <p class="venue"><strong>NeurIPS 2026 Spotlight Paper</strong> <span aria-hidden="true">·</span> Main Track <span aria-hidden="true">·</span> Top ~3.7%</p>
+    <p class="paper-title">Entropy Minimization without Model Collapse: Mitigating Prediction Bias in Medical Imaging</p>
+    <p class="authors">Tim Nielen<sup>*</sup>, Sameer Ambekar<sup>*</sup>, Johannes Kiechle, Daniel M. Lang<sup>#</sup>, Julia A. Schnabel<sup>#</sup></p>
+    <p class="contrib">* Shared first authorship &nbsp;·&nbsp; # Shared last authorship</p>
   </header>
 
   <main class="wrap">
+    <h1>How our method treats every sample during unsupervised adaptation</h1>
+    <p class="lede">Each band is one predicted class, and its height shows that class’s share of the total weight in each batch. Entropy Minimization gives every sample the same weight, so the most frequently predicted class takes over the update until the model collapses. DSBR divides each sample’s weight by how often its class is predicted, so every class keeps a say.</p>
+
     <div class="console" role="group" aria-label="Demo controls">
       <div class="transport">
         <button type="button" class="play" id="play" aria-label="Play">
@@ -29,7 +33,7 @@
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>
         </button>
         <div class="progress">
-          <span>Batch <output id="batch" class="num">0</output> of <span id="total" class="num">1200</span></span>
+          <span>Batch <output id="batch" class="num">0</output> of <span class="num">1,200</span></span>
           <div class="track" aria-hidden="true"><i id="progress-fill"></i></div>
         </div>
       </div>
@@ -39,41 +43,43 @@
         <label class="field slider" for="shift"><span>Distribution shift <output id="shift-out" class="num"></output></span><input id="shift" type="range" min="0.6" max="0.9" step="0.01"></label>
       </div>
     </div>
+    <p class="live" id="live"><span class="dot" aria-hidden="true"></span>Running live in your browser</p>
+    <p class="truth" id="truth"></p>
 
     <div class="panels">
       <article class="panel" data-method="EM">
         <header class="panel-head">
-          <h2><span class="swatch em" aria-hidden="true"></span>Entropy Minimization <span class="cite">(EM; <a href="https://arxiv.org/abs/2006.10726">Wang et al., ICLR 2021</a>)</span></h2>
+          <h2><span class="swatch em" aria-hidden="true"></span>Entropy Minimization</h2>
           <p class="status" data-status></p>
         </header>
         <p class="axis-title">Share of the total weight, by predicted class <span>(10-batch average)</span></p>
-        <canvas class="stream" data-stream role="img" aria-label="Share of the total weight per predicted class over batches under Entropy Minimization"></canvas>
+        <div class="stream-wrap"><canvas class="stream" data-stream role="img" aria-label="Share of the total weight per predicted class over batches under Entropy Minimization"></canvas></div>
         <p class="readout" data-readout></p>
         <p class="axis-title">Weight of one sample, by predicted class</p>
         <svg class="weights" data-weights role="img" aria-label="Weight of one sample for each predicted class under Entropy Minimization"></svg>
-        <p class="caption" data-caption></p>
+        <p class="caption">Every sample has a weight of 1, whatever its class, so each class’s share of the weight simply follows the predictions.</p>
       </article>
       <article class="panel" data-method="DSBR">
         <header class="panel-head">
-          <h2><span class="swatch ds" aria-hidden="true"></span>DSBR <span class="cite">(ours)</span></h2>
+          <h2><span class="swatch ds" aria-hidden="true"></span>Distribution Shift Bias Reduction (DSBR)</h2>
           <p class="status" data-status></p>
         </header>
         <p class="axis-title">Share of the total weight, by predicted class <span>(10-batch average)</span></p>
-        <canvas class="stream" data-stream role="img" aria-label="Share of the total weight per predicted class over batches under DSBR"></canvas>
+        <div class="stream-wrap"><canvas class="stream" data-stream role="img" aria-label="Share of the total weight per predicted class over batches under DSBR"></canvas></div>
         <p class="readout" data-readout></p>
         <p class="axis-title">Weight of one sample, by predicted class</p>
         <svg class="weights" data-weights role="img" aria-label="Weight of one sample for each predicted class under DSBR"></svg>
-        <p class="caption" data-caption></p>
+        <p class="caption">A tall bar marks a class that the model currently predicts rarely. DSBR raises its weight so that it is not drowned out.</p>
       </article>
     </div>
 
     <p class="insight" id="insight" aria-live="polite"></p>
-    <p class="note">Both methods adapt the same small synthetic model live in your browser, on identical batches, using the update rules from the paper’s code. We call it a collapse when one class receives at least 95% of predictions on held-out samples. DSBR uses a decay of α = 0.9.</p>
+    <p class="note">Both methods adapt the same small synthetic model on identical batches, using the update rules from the paper’s code. We report model collapse when one class receives at least 95% of the predictions on held-out samples. DSBR uses a decay of α = 0.9.</p>
   </main>
 
   <footer class="wrap">
     <a href="index.html">Project page</a> · <a href="https://arxiv.org/abs/2606.02339">Paper</a> · <a href="https://neurips.cc/virtual/2026/loc/paris/poster/149828">NeurIPS page</a>
   </footer>
-  <noscript><p class="wrap note">This demo needs JavaScript. The <a href="index.html">project page</a> and <a href="https://arxiv.org/abs/2606.02339">paper</a> work without it.</p></noscript>
+  <noscript><p class="wrap note">This demo needs JavaScript. The <a href="index.html">project page</a> and the <a href="https://arxiv.org/abs/2606.02339">paper</a> work without it.</p></noscript>
 </body>
 </html>
