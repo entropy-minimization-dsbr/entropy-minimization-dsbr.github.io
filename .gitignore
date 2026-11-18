@@ -1,3 +1,11 @@
 .DS_Store
 extra/
 .impeccable/
+
+# Claude Code and design-tool files
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+PRODUCT.md
+DESIGN.md
+graphify-out/
