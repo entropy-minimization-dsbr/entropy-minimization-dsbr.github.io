@@ -272,7 +272,8 @@
     };
     if (!e.hist.length) { add(`Initial bias is present for both models: class ${LETTER[run.bias.cls]} is predicted for ${pct(run.bias.share)} of samples, against a true share of ${pct(1 / st.K, 1)}. Press play to start the adaptation.`); return; }
     const c = LETTER[run.bias.cls], start = pct(run.bias.share), en = e.predShare[run.bias.cls], dn = d.predShare[run.bias.cls];
-    add(`Initial bias is present for both models: class ${c} is predicted for ${start} of samples, against a true share of ${pct(1 / st.K, 1)}. `);
+    add(`Initial bias is present for both models: class ${c} is predicted for ${start} of samples, against a true share of ${pct(1 / st.K, 1)}.`);
+    insight.appendChild(document.createElement("br"));
     add(`Entropy Minimization has ${en >= run.bias.share ? "amplified" : "changed"} it to ${pct(en)}`, true);
     add(", while ");
     add(`our DSBR has ${dn <= run.bias.share ? "dampened" : "changed"} it to ${pct(dn)}`, true);
