@@ -6,10 +6,10 @@
   <meta name="color-scheme" content="only light">
   <title>Interactive Demo | DSBR</title>
   <meta name="description" content="Interactive demo for the NeurIPS 2026 Spotlight paper “Entropy Minimization without Model Collapse”: see how Entropy Minimization and DSBR weight every sample, and watch the model collapse under Entropy Minimization but not under DSBR.">
-  <link rel="stylesheet" href="demo/demo.css?v=4">
+  <link rel="stylesheet" href="demo/demo.css?v=14">
   <script defer src="demo/engine.js?v=4"></script>
   <script defer src="demo/models.js?v=4"></script>
-  <script defer src="demo/demo.js?v=4"></script>
+  <script defer src="demo/demo.js?v=13"></script>
 </head>
 <body>
   <header class="wrap masthead">
@@ -17,12 +17,12 @@
     <p class="venue"><strong>NeurIPS 2026 Spotlight Paper</strong> <span aria-hidden="true">·</span> Main Track <span aria-hidden="true">·</span> Top ~3.7%</p>
     <p class="paper-title">Entropy Minimization without Model Collapse: Mitigating Prediction Bias in Medical Imaging</p>
     <p class="authors">Tim Nielen<sup>*</sup>, Sameer Ambekar<sup>*</sup>, Johannes Kiechle, Daniel M. Lang<sup>#</sup>, Julia A. Schnabel<sup>#</sup></p>
-    <p class="contrib">* Shared first authorship &nbsp;·&nbsp; # Shared last authorship</p>
+    <p class="contrib"><sup>*</sup>Shared first authorship &nbsp;·&nbsp; <sup>#</sup>Shared last authorship</p>
   </header>
 
   <main class="wrap">
     <h1>How our method treats every sample during unsupervised adaptation</h1>
-    <p class="lede">Each band is one predicted class, and its height shows that class’s share of the total weight in each batch. Entropy Minimization gives every sample the same weight, so the most frequently predicted class takes over the update until the model collapses. DSBR divides each sample’s weight by how often its class is predicted, so every class keeps a say.</p>
+    <p class="lede">Under distribution shift, feature clusters merge and the model develops a prediction bias: it over-predicts one class although the true classes are balanced. Entropy Minimization weights every sample equally and amplifies this bias until model collapse; our DSBR reweights samples by their predicted class and dampens it.</p>
 
     <div class="console" role="group" aria-label="Demo controls">
       <div class="transport">
@@ -69,7 +69,7 @@
         <p class="readout" data-readout></p>
         <p class="axis-title">Weight of one sample, by predicted class</p>
         <svg class="weights" data-weights role="img" aria-label="Weight of one sample for each predicted class under DSBR"></svg>
-        <p class="caption">A tall bar marks a class that the model currently predicts rarely. DSBR raises its weight so that it is not drowned out.</p>
+        <p class="caption">A tall bar marks a suppressed class, one the model currently predicts rarely. DSBR raises its weight so that it is not drowned out.</p>
       </article>
     </div>
 

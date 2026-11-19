@@ -6,12 +6,16 @@
   --muted: #5f5f66;
   --line: #e2e2e6;
   --soft: #f6f6f8;
-  --em: #b64342;
-  --em-tint: #f6cfcb;
-  --em-ink: #8f2f2e;
-  --ds: #0f4d92;
-  --ds-tint: #dde8f5;
-  --accent: #0f4d92;
+  /* Method colours shared with the project page: Entropy Minimization in the
+     paper figure's orange, DSBR in the site's purple. Marks are highlighter tints. */
+  --em: #e68c3b;
+  --em-tint: #fff1dc;
+  --em-ink: #9a4a00;
+  --em-mark: #ffdcb0;
+  --ds: #6d3f9c;
+  --ds-tint: #f1e9f8;
+  --ds-mark: #e6d5f5;
+  --accent: #6d3f9c;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 * { box-sizing: border-box; }
@@ -42,7 +46,7 @@ h1 { margin: 36px 0 10px; padding-top: 28px; border-top: 1px solid var(--line); 
 .console { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); }
 .transport { display: flex; align-items: center; gap: 12px; flex: 1 1 320px; }
 .play { display: grid; place-items: center; flex: none; width: 58px; height: 58px; padding: 0; border: 0; border-radius: 50%; background: var(--ds); color: #fff; cursor: pointer; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18); transition: transform .12s, background .12s; }
-.play:hover { background: #0b3d75; }
+.play:hover { background: #573080; }
 .play:active { transform: scale(0.96); }
 .play svg, .restart svg { fill: currentColor; }
 .restart { display: grid; place-items: center; flex: none; width: 44px; height: 44px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: var(--ink); cursor: pointer; }
@@ -68,6 +72,11 @@ h1 { margin: 36px 0 10px; padding-top: 28px; border-top: 1px solid var(--line); 
 .swatch { display: inline-block; width: 12px; height: 12px; margin-right: 8px; border-radius: 3px; vertical-align: -1px; }
 .swatch.em { background: var(--em); }
 .swatch.ds { background: var(--ds); }
+.panel[data-method="EM"] h2 { color: var(--em-ink); }
+.panel[data-method="DSBR"] h2 { color: var(--ds); }
+mark { padding: 0.05em 0.25em; border-radius: 3px; color: var(--ink); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+mark.em { background: var(--em-mark); }
+mark.ds { background: var(--ds-mark); }
 .cite { color: var(--muted); font-size: 0.85rem; font-weight: 400; }
 .status { margin: 0; padding: 4px 11px; border-radius: 8px; background: var(--soft); color: var(--muted); font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .status.collapsed { background: var(--em-tint); color: var(--em-ink); }

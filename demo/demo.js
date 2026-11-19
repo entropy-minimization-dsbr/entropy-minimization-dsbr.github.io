@@ -6,7 +6,7 @@
   const L = window.DSBRLab, M = window.LAB_MODELS;
   const $ = (s, r = document) => r.querySelector(s);
   const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const C = { ink: css("--ink") || "#272727", muted: css("--muted") || "#5f5f66", line: css("--line") || "#e2e2e6", em: css("--em") || "#b64342" };
+  const C = { ink: css("--ink") || "#272727", muted: css("--muted") || "#5f5f66", line: css("--line") || "#e2e2e6", em: css("--em") || "#e68c3b", emInk: css("--em-ink") || "#9a4a00", ds: css("--ds") || "#6d3f9c" };
   // Class hues from the Nature figure palette (blue, teal, green, rose, violet, grey).
   const CLS = ["#3775ba", "#42949e", "#8bcf8b", "#e9a6a1", "#9a4d8e", "#8c8c8c"];
   const LETTER = "ABCDEF";
@@ -19,7 +19,7 @@
   const font = (px, bold) => `${bold ? "bold " : ""}${px}px Helvetica, Arial, sans-serif`;
   const M_L = 36, M_R = 6, M_T = 6, M_B = 22;
 
-  const st = { K: 6, B: 32, shift: DEFAULT_SHIFT[6], playing: !reduced, hover: null };
+  const st = { K: 2, B: 32, shift: DEFAULT_SHIFT[2], playing: !reduced, hover: null };
   const panels = ["EM", "DSBR"].map((method) => {
     const el = $(`.panel[data-method=${method}]`);
     return { method, el, stream: $("[data-stream]", el), weights: $("[data-weights]", el), status: $("[data-status]", el), readout: $("[data-readout]", el), cache: document.createElement("canvas"), bars: null, painted: 0 };
@@ -61,10 +61,12 @@
       t: 0,
       rand: L.rng(3),
       ev: L.sample(st.K, 400, st.shift, L.rng(11)).xs,
-      m: panels.map((p) => ({ ad: new L.Adapter(w, st.K, p.method, ALPHA), buf: [], hist: [], collapsedAt: null, collapsedShare: 0, collapsedClass: 0, predShare: null })),
+      m: panels.map((p) => ({ ad: new L.Adapter(w, st.K, p.method, ALPHA), buf: [], hist: [], collapsedAt: null, collapsedShare: 0, collapsedClass: 0, predShare: null, startShare: null })),
     };
-    run.m.forEach((m) => { m.predShare = predShare(m.ad); });
-    $("#truth").textContent = `True class distribution: balanced. Each of the ${st.K} classes makes up about ${pct(1 / st.K, 1)} of the samples, so any class predicted more often than that is over-predicted.`;
+    run.m.forEach((m) => { m.predShare = predShare(m.ad); m.startShare = m.predShare.slice(); });
+    const s0 = run.m[0].startShare, top0 = Math.max(...s0);
+    run.bias = { cls: s0.indexOf(top0), share: top0 };
+    $("#truth").textContent = `True class distribution: balanced, ${pct(1 / st.K, 1)} per class. Initial bias: before adaptation, both models predict class ${LETTER[run.bias.cls]} for ${pct(top0)} of held-out samples, so class ${LETTER[run.bias.cls]} is overrepresented and the ${st.K === 2 ? "other class is" : "other classes are"} suppressed.`;
     panels.forEach((p) => { p.painted = 0; p.bars = null; });
     layout();
   }
@@ -137,7 +139,19 @@
     g.textAlign = "left";
     g.strokeStyle = "rgba(39,39,39,.55)"; g.setLineDash([3, 4]); g.lineWidth = 1;
     g.beginPath(); g.moveTo(M_L, Y(1 / K)); g.lineTo(M_L + pw, Y(1 / K)); g.stroke(); g.setLineDash([]);
-    // Band labels at the current edge.
+    if (m.collapsedAt !== null) {
+      g.strokeStyle = C.em; g.lineWidth = 2; g.beginPath(); g.moveTo(X(m.collapsedAt), M_T); g.lineTo(X(m.collapsedAt), M_T + ph); g.stroke();
+    }
+    // Prediction bias: where both methods start, and where this one is now (live).
+    const c = LETTER[run.bias.cls], now = m.predShare[run.bias.cls];
+    const truth = pct(1 / st.K, 1).replace(".0%", "%"), narrow = pw < 420;
+    // Wording follows the paper: initial bias, amplified, dampened, bias vanishes.
+    const verb = Math.abs(now - 1 / st.K) <= 0.03 ? "Bias vanishes" : now > run.bias.share ? "Prediction bias amplified" : "Prediction bias dampened";
+    const biasText = run.t === 0
+      ? (narrow ? `Initial bias: class ${c} at ${pct(run.bias.share)} (true ${truth})` : `Initial bias: class ${c} predicted for ${pct(run.bias.share)} of samples (true share ${truth})`)
+      : (narrow ? `${verb.replace("Prediction bias ", "Bias ")}: ${c} ${pct(run.bias.share)} → ${pct(now)}` : `${verb}: class ${c} ${pct(run.bias.share)} → ${pct(now)} (true share ${truth})`);
+    const start = pill(g, biasText, M_L + 6, M_T + ph - 8, "rgba(255,255,255,.94)", p.method === "EM" ? C.emInk : C.ds, M_L + pw);
+    // Band labels at the current edge, kept clear of the initial-bias label.
     const h = m.hist;
     if (h.length) {
       const last = h[h.length - 1];
@@ -146,7 +160,9 @@
       last.forEach((v, k) => {
         if (v > 0.09) {
           const txt = `${LETTER[k]} ${pct(v)}`, tw = g.measureText(txt).width;
-          const tx = Math.min(Math.max(M_L + 4, X(h.length) - tw - 10), M_L + pw - tw - 8), ty = Y(cum + v / 2);
+          const ty = Y(cum + v / 2);
+          let tx = Math.min(Math.max(M_L + 4, X(h.length) - tw - 10), M_L + pw - tw - 8);
+          if (ty + 9 > start.y0 && ty - 9 < start.y1 && tx < start.x1 + 6) tx = start.x1 + 8;
           g.fillStyle = "rgba(255,255,255,.94)"; g.fillRect(tx - 4, ty - 9, tw + 8, 18);
           g.fillStyle = C.ink; g.fillText(txt, tx, ty + 4);
         }
@@ -156,10 +172,9 @@
     // Collapse marker.
     if (m.collapsedAt !== null) {
       const x = X(m.collapsedAt), label = `Model collapsed at batch ${m.collapsedAt}`;
-      g.strokeStyle = C.em; g.lineWidth = 2; g.beginPath(); g.moveTo(x, M_T); g.lineTo(x, M_T + ph); g.stroke();
       g.font = font(12, true);
       const tw = g.measureText(label).width, lx = Math.max(M_L + 4, Math.min(x + 6, M_L + pw - tw - 12));
-      g.fillStyle = C.em; g.fillRect(lx - 5, M_T + 6, tw + 10, 20);
+      g.fillStyle = C.emInk; g.fillRect(lx - 5, M_T + 6, tw + 10, 20);
       g.fillStyle = "#ffffff"; g.fillText(label, lx, M_T + 20);
     }
     // Hover crosshair and readout.
@@ -173,6 +188,14 @@
       const top = h[i].map((v, k) => [v, k]).sort((a, b) => b[0] - a[0]).slice(0, 3);
       p.readout.textContent = `Batch ${(i + 1).toLocaleString()}: ${top.map(([v, k]) => `${LETTER[k]} ${pct(v)}`).join(", ")}. ${even}`;
     } else p.readout.textContent = even;
+  }
+
+  function pill(g, txt, x, y, bg, fg, maxX) {
+    g.font = font(11.5, true);
+    const tw = g.measureText(txt).width, lx = Math.max(M_L + 4, Math.min(x, maxX - tw - 10));
+    g.fillStyle = bg; g.fillRect(lx - 5, y - 13, tw + 10, 19);
+    g.fillStyle = fg; g.fillText(txt, lx, y + 1);
+    return { x0: lx - 5, x1: lx + tw + 5, y0: y - 13, y1: y + 6 };
   }
 
   /* ---------- Weight chart: fixed 0 to 5 axis, built once, then updated ---------- */
@@ -214,7 +237,7 @@
   }
 
   function drawStatus(p, m) {
-    const s = p.status, top = Math.max(...m.predShare);
+    const s = p.status;
     if (m.collapsedAt !== null) {
       s.className = "status collapsed";
       s.textContent = `Model collapsed at batch ${m.collapsedAt}: ${pct(m.collapsedShare)} predicted as ${LETTER[m.collapsedClass]}`;
@@ -223,7 +246,7 @@
       s.textContent = `No model collapse in ${N.toLocaleString()} batches`;
     } else {
       s.className = "status";
-      s.textContent = `Largest class: ${pct(top)} of predictions`;
+      s.textContent = `Prediction bias: ${pct(m.predShare[run.bias.cls])} predicted as ${LETTER[run.bias.cls]}`;
     }
   }
 
@@ -233,15 +256,28 @@
     $("#progress-fill").style.width = `${(run.t / N) * 100}%`;
     const [e, d] = run.m, insight = $("#insight");
     insight.textContent = "";
-    const add = (txt, b) => { const n = document.createElement(b ? "b" : "span"); n.textContent = txt; insight.appendChild(n); };
-    if (!e.hist.length) { add("Press play to start the adaptation."); return; }
-    const le = e.hist[e.hist.length - 1], ld = d.hist[d.hist.length - 1];
-    add(`An even split would give each class ${pct(1 / st.K, 1)} of the weight. `);
-    add(`Entropy Minimization gives its largest class ${pct(Math.max(...le))}`, true);
+    // Method names are marked like a highlighter: orange for Entropy Minimization, purple for DSBR.
+    const add = (txt, b) => {
+      const n = document.createElement(b ? "b" : "span");
+      txt.split(/(Entropy Minimization|our DSBR|DSBR)/).forEach((part) => {
+        if (!part) return;
+        if (part === "Entropy Minimization" || /DSBR$/.test(part)) {
+          const mk = document.createElement("mark");
+          mk.className = part === "Entropy Minimization" ? "em" : "ds";
+          mk.textContent = part;
+          n.appendChild(mk);
+        } else n.appendChild(document.createTextNode(part));
+      });
+      insight.appendChild(n);
+    };
+    if (!e.hist.length) { add(`Initial bias is present for both models: class ${LETTER[run.bias.cls]} is predicted for ${pct(run.bias.share)} of samples, against a true share of ${pct(1 / st.K, 1)}. Press play to start the adaptation.`); return; }
+    const c = LETTER[run.bias.cls], start = pct(run.bias.share), en = e.predShare[run.bias.cls], dn = d.predShare[run.bias.cls];
+    add(`Initial bias is present for both models: class ${c} is predicted for ${start} of samples, against a true share of ${pct(1 / st.K, 1)}. `);
+    add(`Entropy Minimization has ${en >= run.bias.share ? "amplified" : "changed"} it to ${pct(en)}`, true);
     add(", while ");
-    add(`DSBR gives its largest class ${pct(Math.max(...ld))}`, true);
+    add(`our DSBR has ${dn <= run.bias.share ? "dampened" : "changed"} it to ${pct(dn)}`, true);
     add(".");
-    if (e.collapsedAt !== null && d.collapsedAt === null) add(" The model collapsed under Entropy Minimization but not under DSBR.");
+    if (e.collapsedAt !== null && d.collapsedAt === null) add(" The model collapsed under Entropy Minimization but not under our DSBR.");
   }
   // Full redraw after a reset or resize; cached bands are repainted from history.
   function layout() {
